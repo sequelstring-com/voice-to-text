@@ -1,9 +1,9 @@
-const { contextBridge, ipcRenderer } = require("electron");
 
 console.log("✅ preload.js loaded");
 
 
+const { contextBridge, ipcRenderer } = require("electron");
+
 contextBridge.exposeInMainWorld("electronAPI", {
-  startListening: () => ipcRenderer.invoke("start-listening"),
-  exportExcel: (data) => ipcRenderer.invoke("export-excel", data),
+  startListening: (lang) => ipcRenderer.invoke("start-listening", lang),
 });

@@ -148,7 +148,7 @@ app.whenReady().then(() => {
   createWindow();
 });
 
-// ipcMain.handle("start-listening", async () => {
+
 //   if (isRecording) {
 //     console.log("⚠️ Already recording, skipping duplicate call.");
 //     return "Recording already in progress.";
@@ -234,118 +234,6 @@ app.whenReady().then(() => {
 //   }
 // });
 
-ipcMain.handle("start-listening", async () => {
-  if (isRecording) {
-    console.log("⚠️ Already recording, skipping duplicate call.");
-    return "Recording already in progress.";
-  }
-
-  isRecording = true;
-
-  const tempDir = path.join(__dirname, "../temp");
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
-
-  const rawFile = path.join(tempDir, "recording.wav");
-  const fixedFile = path.join(tempDir, "fixed.wav");
-  const txtFile = fixedFile + ".txt";
-
-  [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
-
-  try {
-    console.log("[electron-start] 🎙️ Recording started...");
-    const wav = fs.createWriteStream(rawFile);
-
-    const rec = record.record({
-      sampleRateHertz: 16000,
-      channels: 1,
-      threshold: 0.3, // lower threshold to ensure it records quiet users
-      recordProgram: "sox",
-      soxArgs: ["gain", "-n", "highpass", "50", "lowpass", "4000", "norm"],
-    });
-
-    const micStream = rec.stream();
-    micStream.pipe(wav);
-
-    // record for ~3s to ensure enough samples
-    await new Promise((r) => setTimeout(r, 4000));
-    rec.stop();
-    console.log("[electron-start] 🛑 Recording stopped.");
-
-    // wait for header flush
-    await new Promise((r) => setTimeout(r, 200));
-    wav.end();
-
-    // ensure it has real data
-    if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size < 2000) {
-      throw new Error("Empty or silent recording (too short).");
-    }
-
-    console.log("[electron-start] 🩹 Fixing and normalizing audio...");
-    // normalize, add 0.5s padding at end, force 16 kHz
-    execSync(
-      `sox "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`,
-      { stdio: "ignore" }
-    );
-
-    // double-check file size
-    if (fs.statSync(fixedFile).size < 2000) {
-      throw new Error("Audio too quiet after normalization.");
-    }
-
-    // 🧠 Whisper transcription
-    console.log("[electron-start] 🧠 Running Whisper...");
-    const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${fixedFile}" -l en --temperature 0.0 --beam-size 3 --best-of 3 --no-timestamps -otxt`;
-    execSync(cmd, { stdio: "ignore" });
-
-    if (!fs.existsSync(txtFile)) {
-      console.warn("[electron-start] ⚠️ Whisper produced no text, inserting fallback.");
-      fs.writeFileSync(txtFile, ""); // create empty txt
-    }
-
-    let result = fs.readFileSync(txtFile, "utf8").trim();
-    if (!result) {
-      result = "No speech detected.";
-    }
-
-    // clean punctuation
-    result = result.replace(/[.,!?]+/g, " ").replace(/\s+/g, " ").trim();
-
-    // convert spoken numbers to digits
-    const map = {
-      zero: "0", one: "1", two: "2", three: "3", four: "4",
-      five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10",
-    };
-    const isNumeric = /^(zero|one|two|three|four|five|six|seven|eight|nine|ten|point|dot|\s)+$/i.test(result);
-    if (isNumeric) {
-      result = result
-        .toLowerCase()
-        .split(/\s+/)
-        .map((w) => (w === "point" || w === "dot") ? "." : map[w] || w)
-        .join("")
-        .trim();
-    }
-
-    result = result
-      .replace(/\b[dD]ash\b/g, "-")  // replaces spoken "dash" with symbol
-      .replace(/\s*-\s*/g, "-")      // remove spaces around hyphens
-      .trim();
-
-
-    console.log("[electron-start] ✅ Final recognized text:", result);
-
-    // cleanup async
-    setTimeout(() => [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f)), 1000);
-
-    return result;
-  } catch (err) {
-    console.error("[electron-start] ❌ Error during offline recognition:", err);
-    return "Error in Whisper: " + err.message;
-  } finally {
-    isRecording = false;
-  }
-});
-
-
 // ipcMain.handle("start-listening", async () => {
 //   if (isRecording) {
 //     console.log("⚠️ Already recording, skipping duplicate call.");
@@ -358,82 +246,179 @@ ipcMain.handle("start-listening", async () => {
 //   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
 //   const rawFile = path.join(tempDir, "recording.wav");
-//   const cleanFile = path.join(tempDir, "cleaned.wav");
+//   const fixedFile = path.join(tempDir, "fixed.wav");
+//   const txtFile = fixedFile + ".txt";
 
-//   [rawFile, cleanFile, cleanFile + ".txt"].forEach((f) => {
-//     if (fs.existsSync(f)) fs.unlinkSync(f);
-//   });
+//   [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
 
 //   try {
-//     console.log("🎙️ Recording mic for 6 seconds...");
+//     console.log("[electron-start] 🎙️ Recording started...");
 //     const wav = fs.createWriteStream(rawFile);
 
-//     record
-//       .record({
-//         sampleRateHertz: 16000,
-//         channels: 1,
-//         threshold: 0.5,
-//         recordProgram: "sox",
-//       })
-//       .stream()
-//       .pipe(wav);
+//     const rec = record.record({
+//       sampleRateHertz: 16000,
+//       channels: 1,
+//       threshold: 0.3, // lower threshold to ensure it records quiet users
+//       recordProgram: "sox",
+//       soxArgs: ["gain", "-n", "highpass", "50", "lowpass", "4000", "norm"],
+//     });
 
-//     await new Promise((r) => setTimeout(r, 6000));
-//     recording.stop();
-//     console.log("🛑 Recording stopped.");
+//     const micStream = rec.stream();
+//     micStream.pipe(wav);
 
-//     // ✂️ Trim silence and normalize
-//     console.log("🔊 Cleaning and normalizing audio...");
-//     execSync(
-//       `sox "${rawFile}" "${cleanFile}" silence 1 0.1 1% 1 0.5 1% highpass 50 lowpass 4000 norm`,
-//       { stdio: "inherit" }
-//     );
+//     // record for ~3s to ensure enough samples
+//     await new Promise((r) => setTimeout(r, 4000));
+//     rec.stop();
+//     console.log("[electron-start] 🛑 Recording stopped.");
 
-//     // 🧠 Run Whisper transcription
-//     console.log("🧠 Running Whisper transcription...");
-//     const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${cleanFile}" -l en --temperature 0.0 --beam-size 5 --best-of 5 --prompt "User is saying short clear answers, numbers or small phrases" --no-timestamps -otxt`;
-//     execSync(cmd, { stdio: "inherit" });
+//     // wait for header flush
+//     await new Promise((r) => setTimeout(r, 200));
+//     wav.end();
 
-//     let result = fs.readFileSync(cleanFile + ".txt", "utf8").trim();
-
-//     // 🧹 Clean punctuation
-//     result = result.replace(/[.,!?]+/g, " ").replace(/\s+/g, " ").trim();
-
-//     // 🔢 Convert number words → digits
-//     const map = {
-//       zero: "0", one: "1", two: "2", three: "3", four: "4", five: "5",
-//       six: "6", seven: "7", eight: "8", nine: "9", ten: "10",
-//     };
-
-//     const decimalFix = (text) => {
-//       let out = "";
-//       const parts = text.toLowerCase().split(/\s+/);
-//       for (const p of parts) {
-//         if (p === "point" || p === "dot") out += ".";
-//         else out += map[p] || p;
-//       }
-//       return out;
-//     };
-
-//     // Only convert if Whisper mostly returned number words
-//     if (/^(zero|one|two|three|four|five|six|seven|eight|nine|ten|point|dot|\s)+$/i.test(result)) {
-//       result = decimalFix(result);
+//     // ensure it has real data
+//     if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size < 2000) {
+//       throw new Error("Empty or silent recording (too short).");
 //     }
 
-//     console.log("✅ Final recognized text:", result);
+//     console.log("[electron-start] 🩹 Fixing and normalizing audio...");
+//     // normalize, add 0.5s padding at end, force 16 kHz
+//     execSync(
+//       `sox "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`,
+//       { stdio: "ignore" }
+//     );
 
-//     [rawFile, cleanFile, cleanFile + ".txt"].forEach((f) => {
-//       if (fs.existsSync(f)) fs.unlinkSync(f);
-//     });
+//     // double-check file size
+//     if (fs.statSync(fixedFile).size < 2000) {
+//       throw new Error("Audio too quiet after normalization.");
+//     }
+
+//     // 🧠 Whisper transcription
+//     console.log("[electron-start] 🧠 Running Whisper...");
+//     const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${fixedFile}" --language auto --temperature 0.0 --beam-size 3 --best-of 3 --no-timestamps -otxt`;
+//     execSync(cmd, { stdio: "ignore" });
+
+//     if (!fs.existsSync(txtFile)) {
+//       console.warn("[electron-start] ⚠️ Whisper produced no text, inserting fallback.");
+//       fs.writeFileSync(txtFile, ""); // create empty txt
+//     }
+
+//     let result = fs.readFileSync(txtFile, "utf8").trim();
+//     if (!result) {
+//       result = "No speech detected.";
+//     }
+
+//     // clean punctuation
+//     result = result.replace(/[.,!?]+/g, " ").replace(/\s+/g, " ").trim();
+
+//     // convert spoken numbers to digits
+//     const map = {
+//       zero: "0", one: "1", two: "2", three: "3", four: "4",
+//       five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10",
+//     };
+//     const isNumeric = /^(zero|one|two|three|four|five|six|seven|eight|nine|ten|point|dot|\s)+$/i.test(result);
+//     if (isNumeric) {
+//       result = result
+//         .toLowerCase()
+//         .split(/\s+/)
+//         .map((w) => (w === "point" || w === "dot") ? "." : map[w] || w)
+//         .join("")
+//         .trim();
+//     }
+
+//     result = result
+//       .replace(/\b[dD]ash\b/g, "-")  // replaces spoken "dash" with symbol
+//       .replace(/\s*-\s*/g, "-")      // remove spaces around hyphens
+//       .trim();
+
+
+//     console.log("[electron-start] ✅ Final recognized text:", result);
+
+//     // cleanup async
+//     setTimeout(() => [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f)), 1000);
 
 //     return result;
 //   } catch (err) {
-//     console.error("❌ Error during offline recognition:", err);
-//     return "Error in Whisper.";
+//     console.error("[electron-start] ❌ Error during offline recognition:", err);
+//     return "Error in Whisper: " + err.message;
 //   } finally {
 //     isRecording = false;
 //   }
 // });
+
+ipcMain.handle("start-listening", async (event, selectedLang = "auto") => {
+  if (isRecording) {
+    console.log("⚠️ Already recording, skipping duplicate call.");
+    return "Recording already in progress.";
+  }
+
+  isRecording = true;
+  const tempDir = path.join(__dirname, "../temp");
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+
+  const rawFile = path.join(tempDir, "recording.wav");
+  const fixedFile = path.join(tempDir, "fixed.wav");
+  const txtFile = fixedFile + ".txt";
+
+  [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
+
+  try {
+    console.log(`[electron-start] 🎙️ Recording started for language: ${selectedLang}`);
+    const wav = fs.createWriteStream(rawFile);
+
+    const rec = record.record({
+      sampleRateHertz: 16000,
+      channels: 1,
+      threshold: 0.3,
+      recordProgram: "sox",
+      soxArgs: ["gain", "-n", "highpass", "50", "lowpass", "4000", "norm"],
+    });
+
+    const micStream = rec.stream();
+    micStream.pipe(wav);
+
+    await new Promise((r) => setTimeout(r, 4000));
+    rec.stop();
+    console.log("[electron-start] 🛑 Recording stopped.");
+
+    await new Promise((r) => setTimeout(r, 200));
+    wav.end();
+
+    if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size < 2000) {
+      throw new Error("Empty or silent recording (too short).");
+    }
+
+    console.log("[electron-start] 🩹 Normalizing audio...");
+    execSync(
+      `sox "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`,
+      { stdio: "ignore" }
+    );
+
+    if (fs.statSync(fixedFile).size < 2000) {
+      throw new Error("Audio too quiet after normalization.");
+    }
+
+    // 🧠 Whisper transcription (language from frontend)
+    console.log("[electron-start] 🧠 Running Whisper...");
+    const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${fixedFile}" --language ${selectedLang} --temperature 0.0 --beam-size 3 --best-of 3 --no-timestamps -otxt`;
+    execSync(cmd, { stdio: "ignore" });
+
+    let result = fs.existsSync(txtFile) ? fs.readFileSync(txtFile, "utf8").trim() : "";
+    if (!result) result = "No speech detected.";
+
+    result = result.replace(/[.,!?]+/g, " ").replace(/\s+/g, " ").trim();
+
+    console.log("[electron-start] ✅ Final recognized text:", result);
+    setTimeout(() => [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f)), 1000);
+
+    return result;
+  } catch (err) {
+    console.error("[electron-start] ❌ Error during offline recognition:", err);
+    return "Error in Whisper: " + err.message;
+  } finally {
+    isRecording = false;
+  }
+});
+
 
 
 ipcMain.handle("export-excel", async (event, data) => {

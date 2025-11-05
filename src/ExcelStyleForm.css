@@ -6,6 +6,37 @@
   background: #fff;
 }
 
+/* ADDED: At the end of your CSS file */
+.language-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px 0;
+  padding: 10px;
+  background: #f0f0f0; /* Light background */
+  border-radius: 5px;
+}
+
+.language-selector label {
+  margin-right: 10px;
+  font-weight: bold;
+  color: #333;
+}
+
+.language-selector select {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.language-selector select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+}
 /* Orange Header */
 .orange-header {
   background: #f7931d;

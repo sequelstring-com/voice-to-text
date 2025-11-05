@@ -1,367 +1,365 @@
-import React, { useState } from "react";
-import "./ExcelStyleForm.css";
 
-export default function ExcelStyleForm() {
-  const rows = Array.from({ length: 10 }, (_, i) => i + 1);
-  const [isListening, setIsListening] = useState(false);
-  const [activeInput, setActiveInput] = useState(null);
+// export default function ExcelStyleForm() {
+//   const rows = Array.from({ length: 10 }, (_, i) => i + 1);
+//   const [isListening, setIsListening] = useState(false);
+//   const [activeInput, setActiveInput] = useState(null);
 
-  const weldingHeaders = [
-    "KP Section",
-    "Weld ID",
-    "WPS Number",
-    "Material Gr I",
-    "Material Gr II",
-    "Size (Inch)",
-    "Size (mm)",
-    "Weld Side",
-    "Root / Hot",
-    "Fill 1",
-    "Fill 2",
-    "Cap",
-    "Fit up",
-    "Final",
-    "Material.",
-    "Comb.",
-    "Pipe No / Spl. No.",
-    "Pipe length (mtrs)",
-    "Remarks"
-  ];
+//   const weldingHeaders = [
+//     "KP Section",
+//     "Weld ID",
+//     "WPS Number",
+//     "Material Gr I",
+//     "Material Gr II",
+//     "Size (Inch)",
+//     "Size (mm)",
+//     "Weld Side",
+//     "Root / Hot",
+//     "Fill 1",
+//     "Fill 2",
+//     "Cap",
+//     "Fit up",
+//     "Final",
+//     "Material.",
+//     "Comb.",
+//     "Pipe No / Spl. No.",
+//     "Pipe length (mtrs)",
+//     "Remarks"
+//   ];
 
 
-  // 🎙 Unified voice input handler (Electron Whisper)
-  const handleVoiceInput = async (event) => {
-    const input = event.target.previousSibling;
-    const fieldLabel =
-      input.getAttribute("data-label") || "this field";
+//   // 🎙 Unified voice input handler (Electron Whisper)
+//   const handleVoiceInput = async (event) => {
+//     const input = event.target.previousSibling;
+//     const fieldLabel =
+//       input.getAttribute("data-label") || "this field";
 
-    if (!window.electronAPI || !window.electronAPI.startListening) {
-      alert("Electron API not available. Make sure preload.js is loaded.");
-      return;
-    }
+//     if (!window.electronAPI || !window.electronAPI.startListening) {
+//       alert("Electron API not available. Make sure preload.js is loaded.");
+//       return;
+//     }
 
-    try {
-      setIsListening(true);
-      setActiveInput(input);
+//     try {
+//       setIsListening(true);
+//       setActiveInput(input);
 
-      // Speak prompt (browser TTS is fine for UX)
-      const utterance = new SpeechSynthesisUtterance(`Please say ${fieldLabel}`);
-      window.speechSynthesis.speak(utterance);
+//       // Speak prompt (browser TTS is fine for UX)
+//       const utterance = new SpeechSynthesisUtterance(`Please say ${fieldLabel}`);
+//       window.speechSynthesis.speak(utterance);
 
-      // Wait for TTS to finish
-      await new Promise((resolve) => (utterance.onend = resolve));
+//       // Wait for TTS to finish
+//       await new Promise((resolve) => (utterance.onend = resolve));
 
-      console.log("🎙 Asking Whisper to listen...");
-      const transcript = await window.electronAPI.startListening();
-      console.log("✅ Whisper result:", transcript);
-
-
-      input.value = transcript;
-    } catch (err) {
-      console.error("Error using voice input:", err);
-      alert("Voice input failed. Check mic or Whisper setup.");
-    } finally {
-      setIsListening(false);
-      setActiveInput(null);
-    }
-  };
-
-  const renderInput = (defaultValue = "", label = "") => (
-    <div className="input-with-mic">
-      <input type="text" defaultValue={defaultValue} data-label={label} />
-      <button
-        type="button"
-        className={`mic-btn ${isListening && activeInput?.getAttribute("data-label") === label
-          ? "mic-active"
-          : ""
-          }`}
-        onClick={handleVoiceInput}
-        disabled={isListening}
-        title={isListening ? "Listening..." : "Click to speak"}
-      >
-        {isListening && activeInput?.getAttribute("data-label") === label
-          ? "🎧"
-          : "🎤"}
-      </button>
-    </div>
-  );
-
-  return (
-    <div className="excel-form-container">
-      {/* Orange Header */}
-      <div className="orange-header">
-        <h1>AL TASINM ENTERPRISES LLC</h1>
-      </div>
-
-      {/* Blue Title Row */}
-      <div className="blue-title">
-        <h2>Daily Welding Production - Visual Inspection Report</h2>
-      </div>
-
-      {/* Top Section */}
-      <div className="top-section">
-        <div className="logo-box"></div>
-
-        <div className="info-table">
-          <table>
-            <tbody>
-              <tr>
-                <td className="label">Contract No.:</td>
-                <td>{renderInput("", "Contract Number")}</td>
-                <td className="label">Contract Title:</td>
-                <td>{renderInput("", "Contract Title")}</td>
-                <td className="label">Report No.:</td>
-                <td>{renderInput("", "Report Number")}</td>
-                <td className="label">Activity Date:</td>
-                <td>{renderInput("", "Activity Date")}</td>
-              </tr>
-              <tr>
-                <td className="label">PO / WO No.:</td>
-                <td>{renderInput("", "PO or WO Number")}</td>
-                <td className="label">Client WPS No.:</td>
-                <td>{renderInput("", "Client WPS Number")}</td>
-                <td className="label">Project Title / Well ID:</td>
-                <td>{renderInput("", "Project Title or Well ID")}</td>
-                <td className="label">Line No.:</td>
-                <td>{renderInput("", "Line Number")}</td>
-              </tr>
-              <tr>
-                <td className="label">Site Name:</td>
-                <td>{renderInput("", "Site Name")}</td>
-                <td className="label">Location:</td>
-                <td colSpan="5">{renderInput("", "Location")}</td>
-              </tr>
-              <tr>
-                <td className="label">Drawing / ISO No.:</td>
-                <td colSpan="7">{renderInput("", "Drawing or ISO Number")}</td>
-              </tr>
-              <tr>
-                <td className="label">Job Description:</td>
-                <td colSpan="7">{renderInput("", "Job Description")}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Welding Table */}
+//       console.log("🎙 Asking Whisper to listen...");
+//       const transcript = await window.electronAPI.startListening();
+//       console.log("✅ Whisper result:", transcript);
 
 
-      {/* Welding Table */}
-      <div className="welding-table-container">
-        <table className="welding-table">
-          <thead>
-            <tr>
-              <th rowSpan="2">Sr. No</th>
-              <th rowSpan="2">KP Sec.</th>
-              <th rowSpan="2">Weld ID</th>
-              <th rowSpan="2">WPS No.</th>
-              <th colSpan="2">Material Gr. / Heat No.</th>
-              <th colSpan="2">Size</th>
-              <th rowSpan="2">Weld Side</th>
-              <th colSpan="4">Welder No. / Welding Process</th>
-              <th colSpan="2">Visual Insp.</th>
-              <th colSpan="2">Pipe Line</th>
-              <th rowSpan="2">Pipe No. / Spl. No.</th>
-              <th rowSpan="2">Pipe length (mtrs)</th>
-              <th rowSpan="2">Remarks</th>
-            </tr>
-            <tr>
-              <th>I</th>
-              <th>II</th>
-              <th>(Inch)</th>
-              <th>(mm)</th>
-              <th>Root / Hot</th>
-              <th>Fill</th>
-              <th>Fill</th>
-              <th>Cap</th>
-              <th>Fit up</th>
-              <th>Final</th>
-              <th>Mtrl.</th>
-              <th>Comb.</th>
-            </tr>
-          </thead>
+//       input.value = transcript;
+//     } catch (err) {
+//       console.error("Error using voice input:", err);
+//       alert("Voice input failed. Check mic or Whisper setup.");
+//     } finally {
+//       setIsListening(false);
+//       setActiveInput(null);
+//     }
+//   };
 
-          <tbody>
-            {rows.map((num) => (
-              <tr key={num}>
-                <td>{num}</td>
-                {weldingHeaders.map((label, i) => (
-                  <td key={i}>{renderInput("", label)}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+//   const renderInput = (defaultValue = "", label = "") => (
+//     <div className="input-with-mic">
+//       <input type="text" defaultValue={defaultValue} data-label={label} />
+//       <button
+//         type="button"
+//         className={`mic-btn ${isListening && activeInput?.getAttribute("data-label") === label
+//           ? "mic-active"
+//           : ""
+//           }`}
+//         onClick={handleVoiceInput}
+//         disabled={isListening}
+//         title={isListening ? "Listening..." : "Click to speak"}
+//       >
+//         {isListening && activeInput?.getAttribute("data-label") === label
+//           ? "🎧"
+//           : "🎤"}
+//       </button>
+//     </div>
+//   );
 
-      {/* Welding Consumable Section */}
-      <div className="consumable-container">
-        <table className="consumable-table">
-          <tbody>
-            <tr>
-              <th rowSpan="3" className="vertical-header">
-                Welding<br />Consumable
-              </th>
-              <th>AWS Classification</th>
-              <td>{renderInput("", "AWS Classification 1")}</td>
-              <td>{renderInput("", "AWS Classification 2")}</td>
-              <td>{renderInput("", "AWS Classification 3")}</td>
-              <td>{renderInput("", "AWS Classification 4")}</td>
-            </tr>
-            <tr>
-              <th>Electrode Dia. (mm)</th>
-              <td>{renderInput("", "Electrode Dia 1")}</td>
-              <td>{renderInput("", "Electrode Dia 2")}</td>
-              <td>{renderInput("", "Electrode Dia 3")}</td>
-              <td>{renderInput("", "Electrode Dia 4")}</td>
-            </tr>
-            <tr>
-              <th>Manufacturer & Batch No.</th>
-              <td>{renderInput("", "Manufacturer 1")}</td>
-              <td>{renderInput("", "Manufacturer 2")}</td>
-              <td>{renderInput("", "Manufacturer 3")}</td>
-              <td>{renderInput("", "Manufacturer 4")}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+//   return (
+//     <div className="excel-form-container">
+//       {/* Orange Header */}
+//       <div className="orange-header">
+//         <h1>AL TASINM ENTERPRISES LLC</h1>
+//       </div>
 
+//       {/* Blue Title Row */}
+//       <div className="blue-title">
+//         <h2>Daily Welding Production - Visual Inspection Report</h2>
+//       </div>
 
-      {/* Legend and Signature */}
-      <div className="legend-signature-container">
-        <div className="legend-text">
-          <p>
-            <strong>Material Grade Legend:</strong> 1 = A 106 Gr. B; 2 = A 105N;
-            3 = A 234 Gr WPB; 4 = ISO 3183- L245 (Gr. B); 5 = ISO 3183- L290 (X42);
-            6 = ISO 3183- L360 (X52); ...
-          </p>
-          <p className="legend-bottom">
-            <strong>Welding Process Legend:</strong> P1 = GTAW; P2 = SMAW; P3 = GMAW;
-            P4 = FCAW; P5 = SAW &nbsp;&nbsp;&nbsp;
-            <strong>Weld Side:</strong> A = 12–6 O’Clock; B = 6–12 O’Clock
-          </p>
-        </div>
+//       {/* Top Section */}
+//       <div className="top-section">
+//         <div className="logo-box"></div>
 
-        <table className="signature-table">
-          <thead>
-            <tr>
-              <th>ATNM Permit Holder</th>
-              <th>ATNM QCI</th>
-              <th>PDO</th>
-              <th>Data Entry By</th>
-            </tr>
-          </thead>
-          <tbody>
-            {["Name", "Signature", "Date"].map((label) => (
-              <tr key={label}>
-                <td>
-                  <strong>{label}:</strong>{" "}
-                  {renderInput("", `Permit Holder ${label}`)}
-                </td>
-                <td>
-                  <strong>{label}:</strong>{" "}
-                  {renderInput("", `QCI ${label}`)}
-                </td>
-                <td>
-                  <strong>{label}:</strong>{" "}
-                  {renderInput("", `PDO ${label}`)}
-                </td>
-                <td>
-                  <strong>{label}:</strong>{" "}
-                  {renderInput("", `Data Entry ${label}`)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+//         <div className="info-table">
+//           <table>
+//             <tbody>
+//               <tr>
+//                 <td className="label">Contract No.:</td>
+//                 <td>{renderInput("", "Contract Number")}</td>
+//                 <td className="label">Contract Title:</td>
+//                 <td>{renderInput("", "Contract Title")}</td>
+//                 <td className="label">Report No.:</td>
+//                 <td>{renderInput("", "Report Number")}</td>
+//                 <td className="label">Activity Date:</td>
+//                 <td>{renderInput("", "Activity Date")}</td>
+//               </tr>
+//               <tr>
+//                 <td className="label">PO / WO No.:</td>
+//                 <td>{renderInput("", "PO or WO Number")}</td>
+//                 <td className="label">Client WPS No.:</td>
+//                 <td>{renderInput("", "Client WPS Number")}</td>
+//                 <td className="label">Project Title / Well ID:</td>
+//                 <td>{renderInput("", "Project Title or Well ID")}</td>
+//                 <td className="label">Line No.:</td>
+//                 <td>{renderInput("", "Line Number")}</td>
+//               </tr>
+//               <tr>
+//                 <td className="label">Site Name:</td>
+//                 <td>{renderInput("", "Site Name")}</td>
+//                 <td className="label">Location:</td>
+//                 <td colSpan="5">{renderInput("", "Location")}</td>
+//               </tr>
+//               <tr>
+//                 <td className="label">Drawing / ISO No.:</td>
+//                 <td colSpan="7">{renderInput("", "Drawing or ISO Number")}</td>
+//               </tr>
+//               <tr>
+//                 <td className="label">Job Description:</td>
+//                 <td colSpan="7">{renderInput("", "Job Description")}</td>
+//               </tr>
+//             </tbody>
+//           </table>
+//         </div>
+//       </div>
+
+//       {/* Welding Table */}
 
 
-      {/* Action Buttons */}
-      <div className="form-actions">
-        {/* <button
-          className="btn btn-green"
-          onClick={() => {
-            // 1️⃣ Collect header fields (top table only)
-            const header = {};
-            const headerLabels = [
-              "Contract Number",
-              "Contract Title",
-              "Report Number",
-              "Activity Date",
-              "PO or WO Number",
-              "Client WPS Number",
-              "Project Title or Well ID",
-              "Drawing or ISO Number",
-              "Line Number",
-              "Site Name",
-              "Job Description",
-              "Location",
-            ];
+//       {/* Welding Table */}
+//       <div className="welding-table-container">
+//         <table className="welding-table">
+//           <thead>
+//             <tr>
+//               <th rowSpan="2">Sr. No</th>
+//               <th rowSpan="2">KP Sec.</th>
+//               <th rowSpan="2">Weld ID</th>
+//               <th rowSpan="2">WPS No.</th>
+//               <th colSpan="2">Material Gr. / Heat No.</th>
+//               <th colSpan="2">Size</th>
+//               <th rowSpan="2">Weld Side</th>
+//               <th colSpan="4">Welder No. / Welding Process</th>
+//               <th colSpan="2">Visual Insp.</th>
+//               <th colSpan="2">Pipe Line</th>
+//               <th rowSpan="2">Pipe No. / Spl. No.</th>
+//               <th rowSpan="2">Pipe length (mtrs)</th>
+//               <th rowSpan="2">Remarks</th>
+//             </tr>
+//             <tr>
+//               <th>I</th>
+//               <th>II</th>
+//               <th>(Inch)</th>
+//               <th>(mm)</th>
+//               <th>Root / Hot</th>
+//               <th>Fill</th>
+//               <th>Fill</th>
+//               <th>Cap</th>
+//               <th>Fit up</th>
+//               <th>Final</th>
+//               <th>Mtrl.</th>
+//               <th>Comb.</th>
+//             </tr>
+//           </thead>
 
-            headerLabels.forEach((label) => {
-              const input = document.querySelector(`input[data-label='${label}']`);
-              if (input) {
-                const key = label
-                  .toLowerCase()
-                  .replace(/\s+/g, "_")
-                  .replace(/number/g, "no")
-                  .replace(/title/g, "title")
-                  .replace(/or_/g, "")
-                  .replace(/_/g, "_");
-                header[key] = input.value.trim();
-              }
-            });
+//           <tbody>
+//             {rows.map((num) => (
+//               <tr key={num}>
+//                 <td>{num}</td>
+//                 {weldingHeaders.map((label, i) => (
+//                   <td key={i}>{renderInput("", label)}</td>
+//                 ))}
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
 
-            // 2️⃣ Collect welding table rows
-            const tableRows = [];
-            const table = document.querySelector(".welding-table tbody");
-            if (table) {
-              for (let row of table.rows) {
-                const cells = row.querySelectorAll("input[data-label]");
-                const rowData = {};
-                cells.forEach((c) => {
-                  const label = c.getAttribute("data-label");
-                  rowData[label] = c.value.trim();
-                });
-                tableRows.push(rowData);
-              }
-            }
+//       {/* Welding Consumable Section */}
+//       <div className="consumable-container">
+//         <table className="consumable-table">
+//           <tbody>
+//             <tr>
+//               <th rowSpan="3" className="vertical-header">
+//                 Welding<br />Consumable
+//               </th>
+//               <th>AWS Classification</th>
+//               <td>{renderInput("", "AWS Classification 1")}</td>
+//               <td>{renderInput("", "AWS Classification 2")}</td>
+//               <td>{renderInput("", "AWS Classification 3")}</td>
+//               <td>{renderInput("", "AWS Classification 4")}</td>
+//             </tr>
+//             <tr>
+//               <th>Electrode Dia. (mm)</th>
+//               <td>{renderInput("", "Electrode Dia 1")}</td>
+//               <td>{renderInput("", "Electrode Dia 2")}</td>
+//               <td>{renderInput("", "Electrode Dia 3")}</td>
+//               <td>{renderInput("", "Electrode Dia 4")}</td>
+//             </tr>
+//             <tr>
+//               <th>Manufacturer & Batch No.</th>
+//               <td>{renderInput("", "Manufacturer 1")}</td>
+//               <td>{renderInput("", "Manufacturer 2")}</td>
+//               <td>{renderInput("", "Manufacturer 3")}</td>
+//               <td>{renderInput("", "Manufacturer 4")}</td>
+//             </tr>
+//           </tbody>
+//         </table>
+//       </div>
 
-            // 3️⃣ Send to Electron
-            const payload = { header, rows: tableRows };
-            console.log("✅ Sending structured data to Electron:", payload);
-            window.electronAPI.exportExcel(payload);
-          }}
-        >
-          Submit
-        </button> */}
 
-        <button
-          className="btn btn-green"
-          onClick={() => {
-            alert("Form saved successfully!");
-          }}
-        >
-          Submit
-        </button>
+//       {/* Legend and Signature */}
+//       <div className="legend-signature-container">
+//         <div className="legend-text">
+//           <p>
+//             <strong>Material Grade Legend:</strong> 1 = A 106 Gr. B; 2 = A 105N;
+//             3 = A 234 Gr WPB; 4 = ISO 3183- L245 (Gr. B); 5 = ISO 3183- L290 (X42);
+//             6 = ISO 3183- L360 (X52); ...
+//           </p>
+//           <p className="legend-bottom">
+//             <strong>Welding Process Legend:</strong> P1 = GTAW; P2 = SMAW; P3 = GMAW;
+//             P4 = FCAW; P5 = SAW &nbsp;&nbsp;&nbsp;
+//             <strong>Weld Side:</strong> A = 12–6 O’Clock; B = 6–12 O’Clock
+//           </p>
+//         </div>
+
+//         <table className="signature-table">
+//           <thead>
+//             <tr>
+//               <th>ATNM Permit Holder</th>
+//               <th>ATNM QCI</th>
+//               <th>PDO</th>
+//               <th>Data Entry By</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {["Name", "Signature", "Date"].map((label) => (
+//               <tr key={label}>
+//                 <td>
+//                   <strong>{label}:</strong>{" "}
+//                   {renderInput("", `Permit Holder ${label}`)}
+//                 </td>
+//                 <td>
+//                   <strong>{label}:</strong>{" "}
+//                   {renderInput("", `QCI ${label}`)}
+//                 </td>
+//                 <td>
+//                   <strong>{label}:</strong>{" "}
+//                   {renderInput("", `PDO ${label}`)}
+//                 </td>
+//                 <td>
+//                   <strong>{label}:</strong>{" "}
+//                   {renderInput("", `Data Entry ${label}`)}
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+
+
+//       {/* Action Buttons */}
+//       <div className="form-actions">
+//         {/* <button
+//           className="btn btn-green"
+//           onClick={() => {
+//             // 1️⃣ Collect header fields (top table only)
+//             const header = {};
+//             const headerLabels = [
+//               "Contract Number",
+//               "Contract Title",
+//               "Report Number",
+//               "Activity Date",
+//               "PO or WO Number",
+//               "Client WPS Number",
+//               "Project Title or Well ID",
+//               "Drawing or ISO Number",
+//               "Line Number",
+//               "Site Name",
+//               "Job Description",
+//               "Location",
+//             ];
+
+//             headerLabels.forEach((label) => {
+//               const input = document.querySelector(`input[data-label='${label}']`);
+//               if (input) {
+//                 const key = label
+//                   .toLowerCase()
+//                   .replace(/\s+/g, "_")
+//                   .replace(/number/g, "no")
+//                   .replace(/title/g, "title")
+//                   .replace(/or_/g, "")
+//                   .replace(/_/g, "_");
+//                 header[key] = input.value.trim();
+//               }
+//             });
+
+//             // 2️⃣ Collect welding table rows
+//             const tableRows = [];
+//             const table = document.querySelector(".welding-table tbody");
+//             if (table) {
+//               for (let row of table.rows) {
+//                 const cells = row.querySelectorAll("input[data-label]");
+//                 const rowData = {};
+//                 cells.forEach((c) => {
+//                   const label = c.getAttribute("data-label");
+//                   rowData[label] = c.value.trim();
+//                 });
+//                 tableRows.push(rowData);
+//               }
+//             }
+
+//             // 3️⃣ Send to Electron
+//             const payload = { header, rows: tableRows };
+//             console.log("✅ Sending structured data to Electron:", payload);
+//             window.electronAPI.exportExcel(payload);
+//           }}
+//         >
+//           Submit
+//         </button> */}
+
+//         <button
+//           className="btn btn-green"
+//           onClick={() => {
+//             alert("Form saved successfully!");
+//           }}
+//         >
+//           Submit
+//         </button>
 
 
 
-        <button
-          className="btn btn-red"
-          onClick={() => {
-            document.querySelectorAll("input[data-label]").forEach((i) => (i.value = ""));
-          }}
-        >
-          Clear
-        </button>
-      </div>
+//         <button
+//           className="btn btn-red"
+//           onClick={() => {
+//             document.querySelectorAll("input[data-label]").forEach((i) => (i.value = ""));
+//           }}
+//         >
+//           Clear
+//         </button>
+//       </div>
 
-    </div>
-  );
-}
+//     </div>
+//   );
+// }
 
 
 
@@ -577,3 +575,333 @@ export default function ExcelStyleForm() {
 //     </div>
 //   );
 // }
+
+
+import React, { useState } from "react";
+import "./ExcelStyleForm.css";
+
+
+
+export default function ExcelStyleForm() {
+  const rows = Array.from({ length: 10 }, (_, i) => i + 1);
+  const [isListening, setIsListening] = useState(false);
+  const [activeInput, setActiveInput] = useState(null);
+  const [selectedLang, setSelectedLang] = useState("en");
+
+  const weldingHeaders = [
+    "KP Section",
+    "Weld ID",
+    "WPS Number",
+    "Material Gr I",
+    "Material Gr II",
+    "Size (Inch)",
+    "Size (mm)",
+    "Weld Side",
+    "Root / Hot",
+    "Fill 1",
+    "Fill 2",
+    "Cap",
+    "Fit up",
+    "Final",
+    "Material.",
+    "Comb.",
+    "Pipe No / Spl. No.",
+    "Pipe length (mtrs)",
+    "Remarks",
+  ];
+
+
+  const languageOptions = [
+    { code: "auto", label: "Auto Detect" },
+    { code: "en", label: "English" },
+    { code: "ar", label: "Arabic" },
+    { code: "hi", label: "Hindi" },
+    { code: "ta", label: "Tamil" },
+    { code: "te", label: "Telugu" },
+    { code: "mr", label: "Marathi" },
+  ];
+
+  
+  const handleVoiceInput = async (event) => {
+    const input = event.target.previousSibling;
+    const fieldLabel = input.getAttribute("data-label") || "this field";
+
+    if (!window.electronAPI || !window.electronAPI.startListening) {
+      alert("Electron API not available. Make sure preload.js is loaded.");
+      return;
+    }
+
+    try {
+      setIsListening(true);
+      setActiveInput(input);
+
+      // 🔊 Speak the field prompt (for better UX)
+      const utterance = new SpeechSynthesisUtterance(
+        `Please say ${fieldLabel}`
+      );
+      window.speechSynthesis.speak(utterance);
+      await new Promise((resolve) => (utterance.onend = resolve));
+
+      console.log("🎙 Asking Whisper to listen...");
+      const transcript = await window.electronAPI.startListening(selectedLang);
+      console.log("✅ Whisper result:", transcript);
+
+      input.value = transcript;
+    } catch (err) {
+      console.error("Error using voice input:", err);
+      alert("Voice input failed. Check mic or Whisper setup.");
+    } finally {
+      setIsListening(false);
+      setActiveInput(null);
+    }
+  };
+
+  const renderInput = (defaultValue = "", label = "") => (
+    <div className="input-with-mic">
+      <input type="text" defaultValue={defaultValue} data-label={label} />
+      <button
+        type="button"
+        className={`mic-btn ${
+          isListening && activeInput?.getAttribute("data-label") === label
+            ? "mic-active"
+            : ""
+        }`}
+        onClick={handleVoiceInput}
+        disabled={isListening}
+        title={isListening ? "Listening..." : "Click to speak"}
+      >
+        {isListening &&
+        activeInput?.getAttribute("data-label") === label
+          ? "🎧"
+          : "🎤"}
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="excel-form-container">
+      {/* 🌐 Language Dropdown */}
+      <div className="language-selector">
+        <label htmlFor="lang">🎧 Select Language:&nbsp;</label>
+        <select
+          id="lang"
+          value={selectedLang}
+          onChange={(e) => setSelectedLang(e.target.value)}
+        >
+          {languageOptions.map((opt) => (
+            <option key={opt.code} value={opt.code}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Orange Header */}
+      <div className="orange-header">
+        <h1>AL TASNIM ENTERPRISES LLC</h1>
+      </div>
+
+      {/* Blue Title Row */}
+      <div className="blue-title">
+        <h2>Daily Welding Production - Visual Inspection Report</h2>
+      </div>
+
+      {/* Top Section */}
+      <div className="top-section">
+        <div className="logo-box"></div>
+
+        <div className="info-table">
+          <table>
+            <tbody>
+              <tr>
+                <td className="label">Contract No.:</td>
+                <td>{renderInput("", "Contract Number")}</td>
+                <td className="label">Contract Title:</td>
+                <td>{renderInput("", "Contract Title")}</td>
+                <td className="label">Report No.:</td>
+                <td>{renderInput("", "Report Number")}</td>
+                <td className="label">Activity Date:</td>
+                <td>{renderInput("", "Activity Date")}</td>
+              </tr>
+              <tr>
+                <td className="label">PO / WO No.:</td>
+                <td>{renderInput("", "PO or WO Number")}</td>
+                <td className="label">Client WPS No.:</td>
+                <td>{renderInput("", "Client WPS Number")}</td>
+                <td className="label">Project Title / Well ID:</td>
+                <td>{renderInput("", "Project Title or Well ID")}</td>
+                <td className="label">Line No.:</td>
+                <td>{renderInput("", "Line Number")}</td>
+              </tr>
+              <tr>
+                <td className="label">Site Name:</td>
+                <td>{renderInput("", "Site Name")}</td>
+                <td className="label">Location:</td>
+                <td colSpan="5">{renderInput("", "Location")}</td>
+              </tr>
+              <tr>
+                <td className="label">Drawing / ISO No.:</td>
+                <td colSpan="7">{renderInput("", "Drawing or ISO Number")}</td>
+              </tr>
+              <tr>
+                <td className="label">Job Description:</td>
+                <td colSpan="7">{renderInput("", "Job Description")}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Welding Table */}
+      <div className="welding-table-container">
+        <table className="welding-table">
+          <thead>
+            <tr>
+              <th rowSpan="2">Sr. No</th>
+              <th rowSpan="2">KP Sec.</th>
+              <th rowSpan="2">Weld ID</th>
+              <th rowSpan="2">WPS No.</th>
+              <th colSpan="2">Material Gr. / Heat No.</th>
+              <th colSpan="2">Size</th>
+              <th rowSpan="2">Weld Side</th>
+              <th colSpan="4">Welder No. / Welding Process</th>
+              <th colSpan="2">Visual Insp.</th>
+              <th colSpan="2">Pipe Line</th>
+              <th rowSpan="2">Pipe No. / Spl. No.</th>
+              <th rowSpan="2">Pipe length (mtrs)</th>
+              <th rowSpan="2">Remarks</th>
+            </tr>
+            <tr>
+              <th>I</th>
+              <th>II</th>
+              <th>(Inch)</th>
+              <th>(mm)</th>
+              <th>Root / Hot</th>
+              <th>Fill</th>
+              <th>Fill</th>
+              <th>Cap</th>
+              <th>Fit up</th>
+              <th>Final</th>
+              <th>Mtrl.</th>
+              <th>Comb.</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {rows.map((num) => (
+              <tr key={num}>
+                <td>{num}</td>
+                {weldingHeaders.map((label, i) => (
+                  <td key={i}>{renderInput("", label)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Welding Consumable Section */}
+      <div className="consumable-container">
+        <table className="consumable-table">
+          <tbody>
+            <tr>
+              <th rowSpan="3" className="vertical-header">
+                Welding<br />Consumable
+              </th>
+              <th>AWS Classification</th>
+              <td>{renderInput("", "AWS Classification 1")}</td>
+              <td>{renderInput("", "AWS Classification 2")}</td>
+              <td>{renderInput("", "AWS Classification 3")}</td>
+              <td>{renderInput("", "AWS Classification 4")}</td>
+            </tr>
+            <tr>
+              <th>Electrode Dia. (mm)</th>
+              <td>{renderInput("", "Electrode Dia 1")}</td>
+              <td>{renderInput("", "Electrode Dia 2")}</td>
+              <td>{renderInput("", "Electrode Dia 3")}</td>
+              <td>{renderInput("", "Electrode Dia 4")}</td>
+            </tr>
+            <tr>
+              <th>Manufacturer & Batch No.</th>
+              <td>{renderInput("", "Manufacturer 1")}</td>
+              <td>{renderInput("", "Manufacturer 2")}</td>
+              <td>{renderInput("", "Manufacturer 3")}</td>
+              <td>{renderInput("", "Manufacturer 4")}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Legend and Signature Section */}
+      <div className="legend-signature-container">
+        <div className="legend-text">
+          <p>
+            <strong>Material Grade Legend:</strong> 1 = A 106 Gr. B; 2 = A 105N;
+            3 = A 234 Gr WPB; 4 = ISO 3183- L245 (Gr. B); 5 = ISO 3183- L290 (X42);
+            6 = ISO 3183- L360 (X52); ...
+          </p>
+          <p className="legend-bottom">
+            <strong>Welding Process Legend:</strong> P1 = GTAW; P2 = SMAW; P3 = GMAW;
+            P4 = FCAW; P5 = SAW &nbsp;&nbsp;&nbsp;
+            <strong>Weld Side:</strong> A = 12–6 O’Clock; B = 6–12 O’Clock
+          </p>
+        </div>
+
+        <table className="signature-table">
+          <thead>
+            <tr>
+              <th>ATNM Permit Holder</th>
+              <th>ATNM QCI</th>
+              <th>PDO</th>
+              <th>Data Entry By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {["Name", "Signature", "Date"].map((label) => (
+              <tr key={label}>
+                <td>
+                  <strong>{label}:</strong>{" "}
+                  {renderInput("", `Permit Holder ${label}`)}
+                </td>
+                <td>
+                  <strong>{label}:</strong>{" "}
+                  {renderInput("", `QCI ${label}`)}
+                </td>
+                <td>
+                  <strong>{label}:</strong>{" "}
+                  {renderInput("", `PDO ${label}`)}
+                </td>
+                <td>
+                  <strong>{label}:</strong>{" "}
+                  {renderInput("", `Data Entry ${label}`)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="form-actions">
+        <button
+          className="btn btn-green"
+          onClick={() => alert("Form saved successfully!")}
+        >
+          Submit
+        </button>
+
+        <button
+          className="btn btn-red"
+          onClick={() =>
+            document
+              .querySelectorAll("input[data-label]")
+              .forEach((i) => (i.value = ""))
+          }
+        >
+          Clear
+        </button>
+      </div>
+    </div>
+  );
+}
+
