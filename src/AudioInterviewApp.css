@@ -1,0 +1,165 @@
+/* Container */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #f9fafc, #eef3ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Card */
+.form-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  width: 100%;
+  max-width: 700px;
+}
+
+/* Titles */
+.form-title {
+  font-size: 26px;
+  color: #2f3e9e;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.form-subtitle {
+  color: #555;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+/* Status Box */
+.status-box {
+  background: #f0f4ff;
+  border: 1px solid #c7d2fe;
+  padding: 10px 15px;
+  border-radius: 6px;
+  color: #1e3a8a;
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+/* Question Card */
+.question-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: #fafafa;
+  transition: background 0.2s ease-in-out;
+}
+
+.question-card:hover {
+  background: #f5f5f5;
+}
+
+.question-card.submitted {
+  background: #e9fbe9;
+  border-color: #a7e0a7;
+}
+
+/* Question Header */
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.question-header h2 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.submitted-label {
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Question Text */
+.question-text {
+  font-size: 14px;
+  color: #555;
+  margin: 8px 0;
+}
+
+/* Textarea */
+.answer-box {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+}
+
+.answer-box:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-blue {
+  background-color: #2563eb;
+}
+
+.btn-blue:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-yellow {
+  background-color: #f59e0b;
+}
+
+.btn-green {
+  background-color: #16a34a;
+}
+
+.btn-green:hover {
+  background-color: #15803d;
+}
+
+.btn-indigo {
+  background-color: #4f46e5;
+}
+
+.btn-indigo:hover {
+  background-color: #4338ca;
+}
+
+/* Submit all */
+.submit-all {
+  text-align: center;
+  margin-top: 25px;
+}
+
+/* Tip */
+.tip {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  margin-top: 15px;
+}
