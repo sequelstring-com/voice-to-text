@@ -1,32 +1,85 @@
 {
-  "name": "interview-frontend",
+  "name": "voicetotext",
   "version": "1.0.0",
+  "description": "Offline multilingual speech-to-text desktop app powered by Whisper.cpp and Electron.",
   "private": true,
+  "homepage": "./",
   "main": "electron/main.js",
+  "author": {
+    "name": "Abhishek Kumar",
+    "email": "you@example.com"
+  },
   "scripts": {
     "react-start": "react-scripts start",
-    "electron-start": "wait-on http://localhost:3000 --timeout 60000 && npx electron ./electron/main.js",
-    "start": "concurrently \"npm:react-start\" \"npm:electron-start\""
+    "electron-start": "wait-on http://localhost:3000 --timeout 60000 && electron ./electron/main.js",
+    "start": "concurrently \"npm:react-start\" \"npm:electron-start\"",
+    "build-react": "react-scripts build",
+    "dist": "npm run build-react && electron-builder -mw",
+    "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
-    "ffi-napi-v22": "^0.0.1",
     "mic": "^2.1.2",
     "node-record-lpcm16": "^1.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-scripts": "^5.0.1",
-    "react-start": "^1.1.2",
-    "vosk": "^0.3.38",
-    "whisper-node": "^1.1.1"
+    "vosk": "^0.3.38"
   },
   "devDependencies": {
-    "@electron/rebuild": "^3.7.2",
     "concurrently": "^9.2.1",
+    "wait-on": "^7.0.1",
     "electron": "20.0.2",
-    "electron-rebuild": "^3.2.9",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "wait-on": "^9.0.1"
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9"
+  },
+  "build": {
+    "appId": "com.abhi.voicetotext",
+    "productName": "VoiceToText",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "build/**/*",
+      "electron/**/*",
+      "models/**/*",
+      "whisper.cpp/bin/**",
+      "temp/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "models/",
+        "to": "models"
+      },
+      {
+        "from": "whisper.cpp/bin/",
+        "to": "whisper-bin"
+      }
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "whisper.cpp/bin/**",
+      "models/**"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "extraMetadata": {
+      "main": "electron/main.js"
+    }
   },
   "browserslist": {
     "production": [

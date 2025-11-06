@@ -612,13 +612,13 @@ export default function ExcelStyleForm() {
 
 
   const languageOptions = [
-    { code: "auto", label: "Auto Detect" },
+    //{ code: "auto", label: "Auto Detect" },
     { code: "en", label: "English" },
     { code: "ar", label: "Arabic" },
     { code: "hi", label: "Hindi" },
-    { code: "ta", label: "Tamil" },
-    { code: "te", label: "Telugu" },
-    { code: "mr", label: "Marathi" },
+    // { code: "ta", label: "Tamil" },
+    // { code: "te", label: "Telugu" },
+    // { code: "mr", label: "Marathi" },
   ];
 
   

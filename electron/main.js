@@ -1,11 +1,19 @@
-// const { app, BrowserWindow, ipcMain } = require("electron");
+
+// const { app, BrowserWindow, ipcMain, shell } = require("electron");
 // const path = require("path");
 // const fs = require("fs");
 // const { execSync } = require("child_process");
 // const record = require("node-record-lpcm16");
 // const recording = record.record();
+// const { exec } = require("child_process");
+// const ExcelJS = require("exceljs");
+// const { startWhisper, transcribe } = require("./whisperService");
+
+
 
 // const MODEL_PATH = path.join(__dirname, "../models/ggml-large-v3.bin");
+// //const MODEL_PATH = path.join(__dirname, "../models/ggml-medium.en.bin");
+
 // const WHISPER_PATH = path.join(__dirname, "../whisper.cpp/bin/whisper-cli");
 
 // if (!fs.existsSync(MODEL_PATH)) {
@@ -25,223 +33,26 @@
 //       nodeIntegration: false,
 //     },
 //   });
-//   win.loadURL("http://localhost:3000");
+//  // win.loadURL("http://localhost:3000");
+//   win.loadFile(path.join(__dirname, "../build/index.html"));
+
 // }
 
-// app.whenReady().then(createWindow);
+// //app.whenReady().then(createWindow);
 
-// ipcMain.handle("start-listening", async () => {
-//   if (isRecording) {
-//     console.log("⚠️ Already recording, skipping duplicate call.");
-//     return "Recording already in progress.";
-//   }
-
-//   isRecording = true;
-
-//   const tempDir = path.join(__dirname, "../temp");
-//   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
-
-//   const rawFile = path.join(tempDir, "recording.wav");
-//   const cleanFile = path.join(tempDir, "cleaned.wav");
-
-//   // 🧹 Remove previous temp files
-//   [rawFile, cleanFile, cleanFile + ".txt"].forEach((f) => {
-//     if (fs.existsSync(f)) fs.unlinkSync(f);
-//   });
-
-//   try {
-//     console.log("🎙️ Recording mic for 6 seconds...");
-//     const wav = fs.createWriteStream(rawFile);
-
-//     record
-//       .record({
-//         sampleRateHertz: 16000,
-//         channels: 1,
-//         threshold: 0.5,
-//         recordProgram: "sox",
-//       })
-//       .stream()
-//       .pipe(wav);
-
-//     await new Promise((r) => setTimeout(r, 6000));
-//     recording.stop();
-//     console.log("🛑 Recording stopped.");
-
-//     // ✂️ Trim silence and normalize
-//     console.log("🔊 Cleaning and normalizing audio...");
-//     execSync(
-//       `sox "${rawFile}" "${cleanFile}" silence 1 0.1 1% 1 0.5 1% highpass 50 lowpass 4000 norm`,
-//       { stdio: "inherit" }
-//     );
-
-//     // 🧠 Run Whisper transcription — add flags to reduce punctuation
-//     console.log("🧠 Running Whisper transcription...");
-//     const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${cleanFile}" -l en --temperature 0.0 --beam-size 5 --best-of 5 --prompt "User is speaking short clear English letters or numbers" --no-timestamps -otxt`;
-//     execSync(cmd, { stdio: "inherit" });
-
-//     // 📖 Read result
-//     let result = fs.readFileSync(cleanFile + ".txt", "utf8").trim();
-
-//     // 🧹 Clean punctuation and repeated commas/periods
-//     result = result.replace(/[.,!?]+/g, " ").replace(/\s+/g, " ").trim();
-
-//     console.log("✅ Final recognized text:", result);
-
-//     // 🧽 Cleanup
-//     [rawFile, cleanFile, cleanFile + ".txt"].forEach((f) => {
-//       if (fs.existsSync(f)) fs.unlinkSync(f);
-//     });
-
-//     return result;
-//   } catch (err) {
-//     console.error("❌ Error during offline recognition:", err);
-//     return "Error in Whisper.";
-//   } finally {
-//     isRecording = false;
-//   }
+// app.whenReady().then(() => {
+//   startWhisper();   // 🔥 Load Whisper once
+//   createWindow();
 // });
 
 
-
-
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
-const path = require("path");
-const fs = require("fs");
-const { execSync } = require("child_process");
-const record = require("node-record-lpcm16");
-const recording = record.record();
-const { exec } = require("child_process");
-const ExcelJS = require("exceljs");
-const { startWhisper, transcribe } = require("./whisperService");
-
-
-
-const MODEL_PATH = path.join(__dirname, "../models/ggml-large-v3.bin");
-//const MODEL_PATH = path.join(__dirname, "../models/ggml-medium.en.bin");
-
-const WHISPER_PATH = path.join(__dirname, "../whisper.cpp/bin/whisper-cli");
-
-if (!fs.existsSync(MODEL_PATH)) {
-  console.error("❌ Missing model. Download ggml-large-v3.bin from HuggingFace.");
-  app.quit();
-}
-
-let isRecording = false;
-
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-  });
-  win.loadURL("http://localhost:3000");
-}
-
-//app.whenReady().then(createWindow);
-
-app.whenReady().then(() => {
-  startWhisper();   // 🔥 Load Whisper once
-  createWindow();
-});
-
-
+// ipcMain.handle("start-listening", async (event, selectedLang = "auto") => {
 //   if (isRecording) {
 //     console.log("⚠️ Already recording, skipping duplicate call.");
 //     return "Recording already in progress.";
 //   }
 
 //   isRecording = true;
-
-//   const tempDir = path.join(__dirname, "../temp");
-//   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
-
-//   const rawFile = path.join(tempDir, "recording.wav");
-//   const cleanFile = path.join(tempDir, "cleaned.wav");
-
-//   // Clean up previous files
-//   [rawFile, cleanFile].forEach((f) => {
-//     if (fs.existsSync(f)) fs.unlinkSync(f);
-//   });
-
-//   try {
-//     console.log("[electron-start] 🎙️ Recording started...");
-//     const wav = fs.createWriteStream(rawFile);
-
-//     const recording = record.record({
-//       sampleRateHertz: 16000,
-//       channels: 1,
-//       threshold: 0.5,
-//       recordProgram: "sox",
-//     });
-
-//     recording.stream().pipe(wav);
-
-//     // record for 3 seconds (shorter for faster response)
-//     await new Promise((r) => setTimeout(r, 4000));
-//     recording.stop();
-//     console.log("[electron-start] 🛑 Recording stopped.");
-
-//     // Clean and normalize audio
-//     console.log("[electron-start] 🔊 Cleaning and normalizing audio...");
-//     execSync(
-//       `sox "${rawFile}" "${cleanFile}" silence 1 0.1 1% 1 0.5 1% highpass 50 lowpass 4000 norm`,
-//       { stdio: "inherit" }
-//     );
-
-//     // Transcribe via persistent Whisper
-//     console.time("whisper-time");
-//     console.log("[electron-start] 🧠 Sending audio to persistent Whisper...");
-//     const result = await transcribe(cleanFile);
-//     console.timeEnd("whisper-time");
-
-//     let text = result.trim();
-
-//     // Sanitize: convert "dash" → "-" and number words → digits
-//     const numMap = {
-//       zero: "0",
-//       one: "1",
-//       two: "2",
-//       three: "3",
-//       four: "4",
-//       five: "5",
-//       six: "6",
-//       seven: "7",
-//       eight: "8",
-//       nine: "9",
-//       ten: "10",
-//     };
-//     text = text
-//       .replace(/\b(dash|minus)\b/gi, "-")
-//       .split(/\b/)
-//       .map((t) => numMap[t.toLowerCase()] || t)
-//       .join("")
-//       .replace(/\s*-\s*/g, "-")
-//       .replace(/[.,!?]+/g, " ")
-//       .trim();
-
-//     console.log("[electron-start] ✅ Final recognized text:", text);
-//     return text;
-
-//   } catch (err) {
-//     console.error("[electron-start] ❌ Error during offline recognition:", err);
-//     return "Error in Whisper.";
-//   } finally {
-//     isRecording = false;
-//   }
-// });
-
-// ipcMain.handle("start-listening", async () => {
-//   if (isRecording) {
-//     console.log("⚠️ Already recording, skipping duplicate call.");
-//     return "Recording already in progress.";
-//   }
-
-//   isRecording = true;
-
 //   const tempDir = path.join(__dirname, "../temp");
 //   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
@@ -252,13 +63,13 @@ app.whenReady().then(() => {
 //   [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
 
 //   try {
-//     console.log("[electron-start] 🎙️ Recording started...");
+//     console.log(`[electron-start] 🎙️ Recording started for language: ${selectedLang}`);
 //     const wav = fs.createWriteStream(rawFile);
 
 //     const rec = record.record({
 //       sampleRateHertz: 16000,
 //       channels: 1,
-//       threshold: 0.3, // lower threshold to ensure it records quiet users
+//       threshold: 0.3,
 //       recordProgram: "sox",
 //       soxArgs: ["gain", "-n", "highpass", "50", "lowpass", "4000", "norm"],
 //     });
@@ -266,74 +77,38 @@ app.whenReady().then(() => {
 //     const micStream = rec.stream();
 //     micStream.pipe(wav);
 
-//     // record for ~3s to ensure enough samples
 //     await new Promise((r) => setTimeout(r, 4000));
 //     rec.stop();
 //     console.log("[electron-start] 🛑 Recording stopped.");
 
-//     // wait for header flush
 //     await new Promise((r) => setTimeout(r, 200));
 //     wav.end();
 
-//     // ensure it has real data
 //     if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size < 2000) {
 //       throw new Error("Empty or silent recording (too short).");
 //     }
 
-//     console.log("[electron-start] 🩹 Fixing and normalizing audio...");
-//     // normalize, add 0.5s padding at end, force 16 kHz
+//     console.log("[electron-start] 🩹 Normalizing audio...");
 //     execSync(
 //       `sox "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`,
 //       { stdio: "ignore" }
 //     );
 
-//     // double-check file size
 //     if (fs.statSync(fixedFile).size < 2000) {
 //       throw new Error("Audio too quiet after normalization.");
 //     }
 
-//     // 🧠 Whisper transcription
+//     // 🧠 Whisper transcription (language from frontend)
 //     console.log("[electron-start] 🧠 Running Whisper...");
-//     const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${fixedFile}" --language auto --temperature 0.0 --beam-size 3 --best-of 3 --no-timestamps -otxt`;
+//     const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${fixedFile}" --language ${selectedLang} --temperature 0.0 --beam-size 3 --best-of 3 --no-timestamps -otxt`;
 //     execSync(cmd, { stdio: "ignore" });
 
-//     if (!fs.existsSync(txtFile)) {
-//       console.warn("[electron-start] ⚠️ Whisper produced no text, inserting fallback.");
-//       fs.writeFileSync(txtFile, ""); // create empty txt
-//     }
+//     let result = fs.existsSync(txtFile) ? fs.readFileSync(txtFile, "utf8").trim() : "";
+//     if (!result) result = "No speech detected.";
 
-//     let result = fs.readFileSync(txtFile, "utf8").trim();
-//     if (!result) {
-//       result = "No speech detected.";
-//     }
-
-//     // clean punctuation
 //     result = result.replace(/[.,!?]+/g, " ").replace(/\s+/g, " ").trim();
 
-//     // convert spoken numbers to digits
-//     const map = {
-//       zero: "0", one: "1", two: "2", three: "3", four: "4",
-//       five: "5", six: "6", seven: "7", eight: "8", nine: "9", ten: "10",
-//     };
-//     const isNumeric = /^(zero|one|two|three|four|five|six|seven|eight|nine|ten|point|dot|\s)+$/i.test(result);
-//     if (isNumeric) {
-//       result = result
-//         .toLowerCase()
-//         .split(/\s+/)
-//         .map((w) => (w === "point" || w === "dot") ? "." : map[w] || w)
-//         .join("")
-//         .trim();
-//     }
-
-//     result = result
-//       .replace(/\b[dD]ash\b/g, "-")  // replaces spoken "dash" with symbol
-//       .replace(/\s*-\s*/g, "-")      // remove spaces around hyphens
-//       .trim();
-
-
 //     console.log("[electron-start] ✅ Final recognized text:", result);
-
-//     // cleanup async
 //     setTimeout(() => [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f)), 1000);
 
 //     return result;
@@ -345,79 +120,302 @@ app.whenReady().then(() => {
 //   }
 // });
 
-ipcMain.handle("start-listening", async (event, selectedLang = "auto") => {
-  if (isRecording) {
-    console.log("⚠️ Already recording, skipping duplicate call.");
-    return "Recording already in progress.";
+// 
+
+
+
+// const { app, BrowserWindow, ipcMain } = require("electron");
+// const path = require("path");
+// const fs = require("fs");
+// const { execSync, spawn } = require("child_process");
+
+// // Detect packaged vs dev mode
+// const isPackaged = app.isPackaged;
+
+// // ✅ Get correct base paths depending on environment
+// const getBasePath = () => {
+//   return isPackaged
+//     ? path.join(process.resourcesPath, "whisper-bin") // inside packaged app
+//     : path.join(__dirname, "../whisper.cpp/bin");     // during development
+// };
+
+// // ✅ Model and binary paths
+// const MODEL_PATH = isPackaged
+//   ? path.join(process.resourcesPath, "models/ggml-large-v3.bin")
+//   : path.join(__dirname, "../models/ggml-large-v3.bin");
+
+// const WHISPER_PATH = path.join(getBasePath(), "whisper-cli");
+// const SOX_PATH = path.join(
+//   getBasePath(),
+//   process.platform === "win32" ? "sox.exe" : "sox"
+// );
+
+// // ✅ Verify critical files exist
+// if (!fs.existsSync(MODEL_PATH)) {
+//   console.error("❌ Missing Whisper model:", MODEL_PATH);
+//   app.quit();
+// }
+
+// if (!fs.existsSync(SOX_PATH)) {
+//   console.error("❌ Missing SoX binary:", SOX_PATH);
+//   app.quit();
+// }
+
+// let mainWindow;
+// let isRecording = false;
+
+// // ✅ Create main window
+// function createWindow() {
+//   mainWindow = new BrowserWindow({
+//     width: 1200,
+//     height: 800,
+//     webPreferences: {
+//       preload: path.join(__dirname, "preload.js"),
+//       contextIsolation: true,
+//       nodeIntegration: false,
+//     },
+//   });
+
+//   const isDev = !app.isPackaged;
+
+//   if (isDev) {
+//     // Development: React dev server
+//     mainWindow.loadURL("http://localhost:3000");
+//     mainWindow.webContents.openDevTools();
+//   } else {
+//     // Production: Load built React HTML
+//     const buildPath = path.join(process.resourcesPath, "app.asar", "build", "index.html");
+//     if (fs.existsSync(buildPath)) {
+//       mainWindow.loadFile(buildPath);
+//     } else {
+//       mainWindow.loadFile(path.join(process.resourcesPath, "build", "index.html"));
+//     }
+//   }
+
+//   mainWindow.on("ready-to-show", () => mainWindow.show());
+// }
+
+// app.whenReady().then(() => {
+//   createWindow();
+// });
+
+// app.on("window-all-closed", () => {
+//   if (process.platform !== "darwin") app.quit();
+// });
+
+// // ✅ IPC: Start recording + transcribe
+// ipcMain.handle("start-listening", async (event, selectedLang = "auto") => {
+//   if (isRecording) return "Already recording...";
+//   isRecording = true;
+
+//   const tempDir = path.join(app.getPath("userData"), "temp");
+//   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+//   const rawFile = path.join(tempDir, "recording.wav");
+//   const fixedFile = path.join(tempDir, "fixed.wav");
+//   const txtFile = fixedFile + ".txt";
+
+//   [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
+
+//   try {
+//     console.log(`[🎙️] Recording in language: ${selectedLang}`);
+//     console.log(`[🧩] Using SoX binary: ${SOX_PATH}`);
+
+//     // --- Record using bundled SoX binary ---
+//     const recProcess = spawn(SOX_PATH, [
+//       "-d", "-c", "1", "-r", "16000", "-b", "16",
+//       rawFile, "trim", "0", "4" // Record 4 seconds
+//     ]);
+
+//     await new Promise((resolve, reject) => {
+//       recProcess.on("close", (code) => {
+//         if (code === 0) resolve();
+//         else reject(new Error("SoX recording failed"));
+//       });
+//     });
+
+//     if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size < 2000)
+//       throw new Error("No audio captured (mic permission or silence)");
+
+//     console.log("[🎧] Normalizing audio...");
+//     execSync(
+//       `"${SOX_PATH}" "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`
+//     );
+
+//     if (!fs.existsSync(fixedFile) || fs.statSync(fixedFile).size < 2000)
+//       throw new Error("Audio normalization failed");
+
+//     // --- Run Whisper ---
+//     console.log("[🧠] Running Whisper...");
+//     const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${fixedFile}" --language ${selectedLang} --temperature 0.0 --beam-size 3 --best-of 3 --no-timestamps -otxt`;
+//     execSync(cmd);
+
+//     const result = fs.existsSync(txtFile)
+//       ? fs.readFileSync(txtFile, "utf8").trim()
+//       : "No speech detected.";
+
+//     console.log("✅ Final recognized text:", result);
+
+//     // Clean up temp files
+//     setTimeout(() => {
+//       [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
+//     }, 1500);
+
+//     return result;
+//   } catch (err) {
+//     console.error("❌ Error during recognition:", err);
+//     return "Error: " + err.message;
+//   } finally {
+//     isRecording = false;
+//   }
+// });
+
+
+const { app, BrowserWindow, ipcMain } = require("electron");
+const path = require("path");
+const fs = require("fs");
+const { execSync, spawn } = require("child_process");
+
+// Detect packaged vs dev mode
+const isPackaged = app.isPackaged;
+
+// ✅ Unified helper to resolve paths safely
+const resolvePath = (relativePath) => {
+  return isPackaged
+    ? path.join(process.resourcesPath, relativePath)
+    : path.join(__dirname, "..", relativePath);
+};
+
+// ✅ Whisper & Model paths
+const WHISPER_PATH = resolvePath("whisper-bin/whisper-cli");
+const MODEL_PATH = resolvePath("models/ggml-large-v3.bin");
+
+// ✅ Platform-specific SoX path (if bundled)
+const SOX_PATH = resolvePath(
+  process.platform === "win32" ? "whisper-bin/sox.exe" : "whisper-bin/sox"
+);
+
+// ✅ Ensure critical files exist before launching
+const ensureFileExists = (filePath, label) => {
+  if (!fs.existsSync(filePath)) {
+    console.error(`❌ Missing ${label}:`, filePath);
+    app.quit();
+  }
+};
+
+ensureFileExists(WHISPER_PATH, "Whisper binary");
+ensureFileExists(MODEL_PATH, "Whisper model");
+
+if (process.platform !== "darwin") {
+  ensureFileExists(SOX_PATH, "SoX binary");
+}
+
+let mainWindow;
+let isRecording = false;
+
+// ✅ Create the Electron window
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  if (!isPackaged) {
+    // Dev mode: run from React dev server
+    mainWindow.loadURL("http://localhost:3000");
+    mainWindow.webContents.openDevTools();
+  } else {
+    // Production: load React build
+    const buildIndex = path.join(process.resourcesPath, "app.asar", "build", "index.html");
+    const fallbackIndex = path.join(process.resourcesPath, "build", "index.html");
+
+    if (fs.existsSync(buildIndex)) mainWindow.loadFile(buildIndex);
+    else mainWindow.loadFile(fallbackIndex);
   }
 
+  mainWindow.on("ready-to-show", () => mainWindow.show());
+}
+
+app.whenReady().then(createWindow);
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
+
+// ✅ IPC: handle voice recording + Whisper transcription
+ipcMain.handle("start-listening", async (event, selectedLang = "auto") => {
+  if (isRecording) return "Already recording...";
   isRecording = true;
-  const tempDir = path.join(__dirname, "../temp");
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+
+  const tempDir = path.join(app.getPath("userData"), "temp");
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
   const rawFile = path.join(tempDir, "recording.wav");
   const fixedFile = path.join(tempDir, "fixed.wav");
   const txtFile = fixedFile + ".txt";
 
+  // Clean up old temp files
   [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
 
   try {
-    console.log(`[electron-start] 🎙️ Recording started for language: ${selectedLang}`);
-    const wav = fs.createWriteStream(rawFile);
+    console.log(`[🎙️] Recording (${selectedLang})`);
+    console.log(`[🧩] SoX binary: ${SOX_PATH}`);
 
-    const rec = record.record({
-      sampleRateHertz: 16000,
-      channels: 1,
-      threshold: 0.3,
-      recordProgram: "sox",
-      soxArgs: ["gain", "-n", "highpass", "50", "lowpass", "4000", "norm"],
+    // Record audio (4s)
+    const recProcess = spawn(SOX_PATH, [
+      "-d", "-c", "1", "-r", "16000", "-b", "16",
+      rawFile, "trim", "0", "4"
+    ]);
+
+    await new Promise((resolve, reject) => {
+      recProcess.on("close", (code) => {
+        code === 0 ? resolve() : reject(new Error("SoX recording failed"));
+      });
     });
 
-    const micStream = rec.stream();
-    micStream.pipe(wav);
+    if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size < 2000)
+      throw new Error("No audio captured (mic permission or silence)");
 
-    await new Promise((r) => setTimeout(r, 4000));
-    rec.stop();
-    console.log("[electron-start] 🛑 Recording stopped.");
-
-    await new Promise((r) => setTimeout(r, 200));
-    wav.end();
-
-    if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size < 2000) {
-      throw new Error("Empty or silent recording (too short).");
-    }
-
-    console.log("[electron-start] 🩹 Normalizing audio...");
+    console.log("[🎧] Normalizing audio...");
     execSync(
-      `sox "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`,
-      { stdio: "ignore" }
+      `"${SOX_PATH}" "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`
     );
 
-    if (fs.statSync(fixedFile).size < 2000) {
-      throw new Error("Audio too quiet after normalization.");
-    }
+    if (!fs.existsSync(fixedFile) || fs.statSync(fixedFile).size < 2000)
+      throw new Error("Audio normalization failed");
 
-    // 🧠 Whisper transcription (language from frontend)
-    console.log("[electron-start] 🧠 Running Whisper...");
+    console.log("[🧠] Running Whisper...");
     const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${fixedFile}" --language ${selectedLang} --temperature 0.0 --beam-size 3 --best-of 3 --no-timestamps -otxt`;
-    execSync(cmd, { stdio: "ignore" });
+    execSync(cmd);
 
-    let result = fs.existsSync(txtFile) ? fs.readFileSync(txtFile, "utf8").trim() : "";
-    if (!result) result = "No speech detected.";
+    const result = fs.existsSync(txtFile)
+      ? fs.readFileSync(txtFile, "utf8").trim()
+      : "No speech detected.";
 
-    result = result.replace(/[.,!?]+/g, " ").replace(/\s+/g, " ").trim();
+    console.log("✅ Transcribed text:", result);
 
-    console.log("[electron-start] ✅ Final recognized text:", result);
-    setTimeout(() => [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f)), 1000);
+    // Cleanup
+    setTimeout(() => {
+      [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
+    }, 2000);
 
     return result;
   } catch (err) {
-    console.error("[electron-start] ❌ Error during offline recognition:", err);
-    return "Error in Whisper: " + err.message;
+    console.error("❌ Error during recognition:", err);
+    return "Error: " + err.message;
   } finally {
     isRecording = false;
   }
 });
+
+
+
+
 
 
 

@@ -2,3 +2,7 @@ whisper.cpp
 node_modules
 package-lock.json
 models
+node_modules 2
+dist
+build
+public
