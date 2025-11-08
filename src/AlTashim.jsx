@@ -579,6 +579,7 @@
 
 import React, { useState } from "react";
 import "./ExcelStyleForm.css";
+import altashimLogo from "./altasnimlogo.jpeg";
 
 
 
@@ -708,7 +709,9 @@ export default function ExcelStyleForm() {
 
       {/* Top Section */}
       <div className="top-section">
-        <div className="logo-box"></div>
+        <div className="logo-box">
+          <img src={altashimLogo} alt="AL TASNIM Logo" />
+        </div>
 
         <div className="info-table">
           <table>
