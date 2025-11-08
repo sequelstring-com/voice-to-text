@@ -276,44 +276,38 @@ const path = require("path");
 const fs = require("fs");
 const { execSync, spawn } = require("child_process");
 
-// Detect packaged vs dev mode
 const isPackaged = app.isPackaged;
 
-// ✅ Unified helper to resolve paths safely
+// ✅ Helper to safely resolve paths for both dev and production
 const resolvePath = (relativePath) => {
-  return isPackaged
-    ? path.join(process.resourcesPath, relativePath)
-    : path.join(__dirname, "..", relativePath);
-};
-
-// ✅ Whisper & Model paths
-const WHISPER_PATH = resolvePath("whisper-bin/whisper-cli");
-const MODEL_PATH = resolvePath("models/ggml-large-v3.bin");
-
-// ✅ Platform-specific SoX path (if bundled)
-const SOX_PATH = resolvePath(
-  process.platform === "win32" ? "whisper-bin/sox.exe" : "whisper-bin/sox"
-);
-
-// ✅ Ensure critical files exist before launching
-const ensureFileExists = (filePath, label) => {
-  if (!fs.existsSync(filePath)) {
-    console.error(`❌ Missing ${label}:`, filePath);
-    app.quit();
+  if (isPackaged) {
+    return path.join(process.resourcesPath, relativePath);
+  } else {
+    if (relativePath.startsWith("whisper-bin"))
+      return path.join(__dirname, "../whisper.cpp/bin", relativePath.replace("whisper-bin/", ""));
+    return path.join(__dirname, "..", relativePath);
   }
 };
 
-ensureFileExists(WHISPER_PATH, "Whisper binary");
-ensureFileExists(MODEL_PATH, "Whisper model");
+// ✅ Paths
+const WHISPER_PATH = resolvePath("whisper-bin/whisper-cli");
+const MODEL_PATH = resolvePath("models/ggml-large-v3.bin");
+const SOX_PATH = resolvePath(process.platform === "win32" ? "whisper-bin/sox.exe" : "whisper-bin/sox");
 
-if (process.platform !== "darwin") {
-  ensureFileExists(SOX_PATH, "SoX binary");
-}
+console.log("🧩 WHISPER:", WHISPER_PATH);
+console.log("🎙️ SOX:", SOX_PATH);
+
+// ✅ Validate resources
+[["Whisper binary", WHISPER_PATH], ["Model file", MODEL_PATH], ["SoX binary", SOX_PATH]].forEach(([label, f]) => {
+  if (!fs.existsSync(f)) {
+    console.error(`❌ Missing ${label}:`, f);
+    app.quit();
+  }
+});
 
 let mainWindow;
 let isRecording = false;
 
-// ✅ Create the Electron window
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -325,69 +319,46 @@ function createWindow() {
     },
   });
 
-  if (!isPackaged) {
-    // Dev mode: run from React dev server
+  if (isPackaged) {
+    const indexPath = path.join(process.resourcesPath, "app.asar", "build", "index.html");
+    mainWindow.loadFile(fs.existsSync(indexPath) ? indexPath : path.join(process.resourcesPath, "build", "index.html"));
+  } else {
     mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools();
-  } else {
-    // Production: load React build
-    const buildIndex = path.join(process.resourcesPath, "app.asar", "build", "index.html");
-    const fallbackIndex = path.join(process.resourcesPath, "build", "index.html");
-
-    if (fs.existsSync(buildIndex)) mainWindow.loadFile(buildIndex);
-    else mainWindow.loadFile(fallbackIndex);
   }
-
-  mainWindow.on("ready-to-show", () => mainWindow.show());
 }
 
 app.whenReady().then(createWindow);
+app.on("window-all-closed", () => process.platform !== "darwin" && app.quit());
 
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
-});
-
-// ✅ IPC: handle voice recording + Whisper transcription
-ipcMain.handle("start-listening", async (event, selectedLang = "auto") => {
+// 🎤 Voice Recording + Transcription
+ipcMain.handle("start-listening", async (event, selectedLang = "en") => {
   if (isRecording) return "Already recording...";
   isRecording = true;
 
   const tempDir = path.join(app.getPath("userData"), "temp");
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+  fs.mkdirSync(tempDir, { recursive: true });
 
   const rawFile = path.join(tempDir, "recording.wav");
   const fixedFile = path.join(tempDir, "fixed.wav");
   const txtFile = fixedFile + ".txt";
-
-  // Clean up old temp files
-  [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
+  [rawFile, fixedFile, txtFile].forEach(f => fs.existsSync(f) && fs.unlinkSync(f));
 
   try {
-    console.log(`[🎙️] Recording (${selectedLang})`);
-    console.log(`[🧩] SoX binary: ${SOX_PATH}`);
+    console.log("[🎙️] Recording 4s...");
 
-    // Record audio (4s)
-    const recProcess = spawn(SOX_PATH, [
-      "-d", "-c", "1", "-r", "16000", "-b", "16",
-      rawFile, "trim", "0", "4"
-    ]);
+    console.log(`[🎙️] Recording in language: ${selectedLang}`);
+    const recProcess = spawn(SOX_PATH, ["-d", "-c", "1", "-r", "16000", "-b", "16", rawFile, "trim", "0", "4"]);
 
     await new Promise((resolve, reject) => {
-      recProcess.on("close", (code) => {
-        code === 0 ? resolve() : reject(new Error("SoX recording failed"));
-      });
+      recProcess.on("close", (code) => (code === 0 ? resolve() : reject(new Error("SoX recording failed"))));
     });
 
     if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size < 2000)
       throw new Error("No audio captured (mic permission or silence)");
 
-    console.log("[🎧] Normalizing audio...");
-    execSync(
-      `"${SOX_PATH}" "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`
-    );
-
-    if (!fs.existsSync(fixedFile) || fs.statSync(fixedFile).size < 2000)
-      throw new Error("Audio normalization failed");
+    console.log("[🎧] Cleaning audio...");
+    execSync(`"${SOX_PATH}" "${rawFile}" "${fixedFile}" rate 16k pad 0 0.5 gain -n highpass 50 lowpass 4000 norm`);
 
     console.log("[🧠] Running Whisper...");
     const cmd = `"${WHISPER_PATH}" -m "${MODEL_PATH}" -f "${fixedFile}" --language ${selectedLang} --temperature 0.0 --beam-size 3 --best-of 3 --no-timestamps -otxt`;
@@ -397,13 +368,7 @@ ipcMain.handle("start-listening", async (event, selectedLang = "auto") => {
       ? fs.readFileSync(txtFile, "utf8").trim()
       : "No speech detected.";
 
-    console.log("✅ Transcribed text:", result);
-
-    // Cleanup
-    setTimeout(() => {
-      [rawFile, fixedFile, txtFile].forEach((f) => fs.existsSync(f) && fs.unlinkSync(f));
-    }, 2000);
-
+    console.log("✅ Transcription:", result);
     return result;
   } catch (err) {
     console.error("❌ Error during recognition:", err);

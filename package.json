@@ -14,11 +14,15 @@
     "electron-start": "wait-on http://localhost:3000 --timeout 60000 && electron ./electron/main.js",
     "start": "concurrently \"npm:react-start\" \"npm:electron-start\"",
     "build-react": "react-scripts build",
-    "dist": "npm run build-react && electron-builder -mw",
-    "postinstall": "electron-builder install-app-deps"
+    "clean-xattr": "xattr -dr com.apple.provenance whisper.cpp/bin || true && xattr -dr com.apple.quarantine whisper.cpp/bin || true",
+    "dist": "npm run clean-xattr && react-scripts build && electron-builder -mw",
+    "postinstall": "electron-builder install-app-deps",
+    "fix-sox": "mv dist/mac-arm64/VoiceToText.app/Contents/Resources/whisper-bin/sox /tmp/sox && sudo xattr -cr /tmp/sox && cp /tmp/sox dist/mac-arm64/VoiceToText.app/Contents/Resources/whisper-bin/sox && sudo chmod +x dist/mac-arm64/VoiceToText.app/Contents/Resources/whisper-bin/sox",
+    "postdist": "npm run fix-sox"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
+    "lodash": "^4.17.21",
     "mic": "^2.1.2",
     "node-record-lpcm16": "^1.0.1",
     "react": "^18.3.1",
@@ -28,10 +32,10 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
-    "wait-on": "^7.0.1",
     "electron": "20.0.2",
     "electron-builder": "^24.13.3",
-    "electron-rebuild": "^3.2.9"
+    "electron-rebuild": "^3.2.9",
+    "wait-on": "^7.0.1"
   },
   "build": {
     "appId": "com.abhi.voicetotext",
@@ -43,8 +47,6 @@
     "files": [
       "build/**/*",
       "electron/**/*",
-      "models/**/*",
-      "whisper.cpp/bin/**",
       "temp/**/*"
     ],
     "extraResources": [
@@ -58,18 +60,33 @@
       }
     ],
     "asar": true,
-    "asarUnpack": [
-      "whisper.cpp/bin/**",
-      "models/**"
-    ],
+    "afterPack": "electron/afterPack.js",
+    "afterAllArtifactBuild": "electron/afterAllArtifactBuild.js",
     "mac": {
       "category": "public.app-category.utilities",
       "target": "dmg",
-      "icon": "assets/icon.icns"
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null
     },
     "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico"
+      "target": {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      },
+      "icon": "assets/icon.ico",
+      "publisherName": "Abhishek Kumar",
+      "artifactName": "VoiceToText-${version}-win-${arch}.${ext}",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "VoiceToText"
     },
     "linux": {
       "target": [
